@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+input_string="$1"
+input_char_search="$2"
+
+freq=$(printf '%s\n' "${input_string}" | awk -F "${input_char_search}" '{printf NF-1}')
+
+printf '%d\n' $freq
+if [[ $freq = 0 ]]; then
+	printf '%s\n' ""
+elif [[ $freq = 1 ]]; then
+	printf '%s\n' "1"
+fi

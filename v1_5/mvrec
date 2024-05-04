@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+
+# version 1.5
+
+rootdir="$1"
+basedir="$1/$2"
+targetdir="$1/$3"
+
+help()
+{
+	# display help
+	printf '%s\n' "add description of the script functions here."
+	printf '%s\n'
+	printf '%s\n' "syntax: script template [-g|h|v|V]"
+	printf '%s\n' "options:"
+	printf '%s\n' "h     print this help."
+	printf '%s\n'
+}
+
+while getopts ":hf" option; do
+	case $option in
+		h) # display help
+		help
+		exit;;
+	esac
+done
+
+dirlist01="$targetdir/dirlist01src.rst"
+dirlist02="$targetdir/dirlist02new.rst"
+
+
+find "$basedir"/* -type d,f > "$dirlist01"
+touch "$dirlist02"
+
+while IFS= read -r aline; do
+	targetbase="$(printf '%s\n' "$aline" | sed 's/\/[^/]*$//' | sed -r "s#$basedir#$targetdir#g")"
+	rootfilename01=$(printf '%s\n' "$aline" | sed 's/^[^:]*[/]//')
+	targetfilename01="$(printf '%s\n' "$rootfilename01" | sed 's/ //g')"
+	targetfilename02="$(printf '%s\n' "$targetfilename01" | sed 's/!//g;s/¡//g;s/@//g;s/#//g;s/\$//g;s/%//g;s/\^//g;s/&//g;s/*//g;s/(//g;s/)//g;s/-//g;s/,//g;s/\[//g;s/\]//g;s/{//g;s/}//g' | sed "s/'//g" | sed "s/ /_/g;s/\(.*\)/\L\1/g" | sed 's/\.//2g')"
+	targetfilepath="$targetbase/$targetfilename02"
+	printf '%s\n' "$targetfilepath" >> "$dirlist02"
+#	mv -v "$aline" "$targetfilepath"
+done < "$dirlist01"

@@ -1,0 +1,1 @@
+find <targetdir> -type d | awk -F/ 'NF > max {max = NF} END {print max}'

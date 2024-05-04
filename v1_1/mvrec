@@ -1,0 +1,157 @@
+#!/usr/bin/env bash
+
+# version 1.1
+
+base_dir="$1"
+
+help()
+{
+	# display help
+	printf '%s\n' "add description of the script functions here."
+	printf '%s\n'
+	printf '%s\n' "syntax: script template [-g|h|v|V]"
+	printf '%s\n' "options:"
+	printf '%s\n' "h     print this help."
+	printf '%s\n'
+}
+
+while getopts ":hf" option; do
+	case $option in
+		h) # display help
+		help
+		exit;;
+	esac
+done
+
+#if [[]]; then
+
+dirlist_01="$base_dir/dirlist_01_og"
+dirlist_02="$base_dir/dirlist_02_new"
+dirlist_03="$base_dir/dirlist_03_test"
+
+if [[ -f "$dirlist_01" ]]; then
+        rm "$dirlist_01"
+fi
+
+find "$base_dir"/* -type d,f > "$dirlist_01"
+
+dirlist_01_bkp="$base_dir/dirlist_01_og_bkp"
+dirlist_02_bkp="$base_dir/dirlist_02_new_bkp"
+dirlist_03_bkp="$base_dir/dirlist_03_test_bkp"
+
+cp -av "$dirlist_01" "$dirlist_01_bkp"
+cp -av "$dirlist_01" "$dirlist_03"
+
+if [[ -f "$dirlist_02" ]]; then
+	rm "$dirlist_02"
+fi
+
+while IFS= read -r aline; do
+	touch "$dirlist_02"
+#	filepath_00="$(printf '%s\n' "$aline" | sed 's/\/[^/]*$/\//')"
+#	filename_01="$(printf '%s\n' "$aline" | sed 's/^[^:]*[/]//')"
+	repl_01="$(printf '%s\n' "$aline" | sed 's/ //g')"
+	repl_02="$(printf '%s\n' "$repl_01" | sed 's/-/_/g')"
+	repl_03="$(printf '%s\n' "$repl_02" | sed 's/&/and/g')"
+	repl_04="$(printf '%s\n' "$repl_03" | sed -e 's/(/{/g')"
+	repl_05="$(printf '%s\n' "$repl_04" | sed -e 's/)/}/g')"
+	repl_06="$(printf '%s\n' "$repl_05" | sed 's/\[/}/g')"
+	repl_07="$(printf '%s\n' "$repl_06" | sed 's/\]/}/g')"
+	repl_08="$(printf '%s\n' "$repl_07" | sed -e "s/'//g")"
+	repl_09="$(printf '%s\n' "$repl_08" | sed 's/,//g')"
+#	repl_10="$(printf '%s\n' "$repl_09" | sed 's/^[^:]*[.]/./')"
+	repl_11="$(printf '%s\n' "$repl_09" | sed -e 's/\(.*\)/\L\1/g')"
+        
+#	printf '%s\n' "$aline"
+#	printf '%s\n' "$repl_10"
+	printf '%s\n' "$repl_11" >> "$dirlist_02"
+done < "$dirlist_01"
+
+cp -av "$dirlist_02" "$dirlist_02_bkp"
+
+#declare -A dirlist01
+#i=0
+
+while IFS= read -r aline; do
+	dirlist01+=("$aline")
+done < "$dirlist_01"
+
+#count1=${#dirlist01[@]}
+#range1=$(seq 1 $count1)
+
+while IFS= read -r aline; do
+	dirlist02+=("$aline")
+done < "$dirlist_02"
+
+
+#count2=${#dirlist02[@]}
+#range2=$(seq 1 $count2)
+
+#while IFS= read -r row; do
+#	read -r -a range1 <<< "$row"
+#	printf '%s\n' "$dirlist01[row]"
+#done
+
+#for n in ${range1[@]}; do
+#	printf '%s\n' "${dirlist01[$n]}"
+#	printf '%s\n' "${dirlist02[$n]}"
+#done
+
+for g in "${!dirlist01[@]}"; do
+	while IFS= read -r aline; do
+		dirlist03+=("$aline")
+	done < "$dirlist_03"
+
+	if [[ "${dirlist01[$g]}" != "${dirlist02[g]}" ]]; then
+		if [[ "${dirlist01[$g]}" == "${dirlist03[g]}" ]]; then
+			mv "${dirlist01[$g]}" "${dirlist02[g]}"
+			vardir1="${dirlist01[$g]}"
+			vardir2="${dirlist02[g]}"
+			gawk -i inplace -v x="$vardir1" -v z="$vardir2" 'BEGIN{ FS = "\n" }{print gensub(x,z, NF);}' "$dirlist_03"
+#			newvar3=$(awk -F'/' -v x="$vardir1" -v z="$vardir2" '{print gensub($vardir1,$vardir2, NF-3)}')
+		else
+			if [[ "${dirlist02[g]}" != "${dirlist03[g]}" ]]; then
+				mv "${dirlist03[g]}" "${dirlist02[g]}"
+				vardir3="${dirlist03[g]}"
+				gawk -i inplace -v x="$vardir3" -v z="$vardir2" 'BEGIN{ FS = "\n" }{print gensub(x,z, NF);}' "$dirlist_03"
+			fi
+		fi
+		unset dirlist03
+	fi
+#	$dirlist01[$g]=$(sed -i 's/"${dirlist01[$g]}"/"${dirlist02[g]}"/g')
+#	final=$(awk -v x="${dirlist01[$g]}" -v z="${dirlist02[g]}" 'OFS="/" {print x,z}')
+#	printf '%s\n' "${dirlist01[$g]}"
+#	printf '%s\n' "${dirlist02[g]}"
+#	printf '%s\n' "${dirlist03[g]}"
+done
+
+#while IFS= read -r -u3 line1 && IFS= read -r -u4 line2; do
+#	if [[ "$line1" == "$line2" ]]; then
+#		printf 'lineA es igual a lineB'
+#	else
+#		printf 'lineA es distinta a lineB'
+#	fi
+#	printf '%s\n' "$line1"
+#	printf '%s\n' "$line2"
+#done 3<"$dirlist_01" 4<"$dirlist_02"
+
+#if [[ -f "$dirlist_03" ]]; then
+#	rm "$dirlist_03"
+#fi
+
+#for g in "${!arr[@]}"; do
+#	printf '%s' "${dir_list[$g]/$'\n'/}" >> "$dirlist_03"
+#   	printf "%s\n" "${arr[g]}" >> "$dirlist_03"
+#	echo "${dir_list[g]}" >> "$dirlist_03"
+#	echo -n "${arr[g]}" >> "$dirlist_03"
+#done
+
+
+#for g in "${!arr[@]}"; do
+#	if [[ "${dir_list[g]}" != "${arr[g]}" ]]; then
+#		mv "${dir_list[g]}" "${arr[g]}"
+#		sed -i -e "s/"${dir_list[g]}"/"${arr[g]}"/g" "$dirlist_01"
+#	fi
+#done
+
+

@@ -1,0 +1,14 @@
+#!/bin/bash
+
+source mockup
+
+# open input files
+exec {fdA}<fileA.txt
+exec {fdB}<fileB.txt
+
+while read -r -u "$fdA" lineA && read -r -u "$fdB" lineB
+do
+    two_lines_operation "$lineA" "$lineB"
+done
+
+exec {fdA}>&- {fdB}>&- # close input files

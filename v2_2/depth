@@ -1,0 +1,99 @@
+#!/usr/bin/env bash
+
+# version 2.2
+
+# originally started with a new script file from scratch
+# called depth, as I changed the approach to the problem
+# by realising it's more efficient to rename directories
+# and files starting at the greatest depth of the di-
+# rectory tree and go backwards to the least at the top
+# of it.
+
+basedir="$1"
+logdir="$basedir/logs"
+compswitch="$2"
+
+#maxdepthdir=$(cd "$basedir" && find . -type d | awk -F"/" 'NF > max {max = NF} END {print max}')
+maxdepthdir=$(cd "$basedir" &&	find ./* -type d -printf '%d\n' | sort -rn | head -1)
+
+printf '%s\n' "$maxdepthdir"
+
+if [[ ! -d "$logdir" ]]; then
+	mkdir -p "$logdir"
+fi
+
+if [[ $maxdepthdir =~ ^[0-9]+$ ]]; then
+	printf '%s\n' "integer"
+else	
+	printf '%s\n' "string"
+fi
+
+END=$maxdepthdir
+
+# dirs
+
+function dirmv() {
+	for (( i = 0; i <= $END; i++ )); do
+		depthlist0="$logdir/depth0_$i.rst"
+		depthlist1="$logdir/depth1_$i.rst"
+		find "$basedir"/* -mindepth $i -maxdepth $i -type d -not -path "$logdir" | sort -n > "$depthlist0"
+		find "$basedir"/* -mindepth $i -maxdepth $i -type d -not -path "$logdir" -printf "%d %p\n" | sort -n > "$depthlist1"
+	done
+
+
+	for (( i = $END; i >= 0; i-- )); do
+		while IFS= read -r aline; do
+			targetbase="$(printf '%s\n' "$aline" | sed 's/\/[^/]*$//')"
+			targetfilename=$(printf '%s\n' "$aline" | sed 's/^[^:]*[/]//' | sed 's/!//g;s/@//g;s/#//g;s/\$//g;s/%//g;s/\^//g;s/&//g;s/*//g;s/(//g;s/)//g;s/-//g;s/,//g;s/\[//g;s/\]//g;s/{//g;s/}//g' | sed "s/'//g" | sed "s/ /_/g;s/\(.*\)/\L\1/g" | sed 's/\.//2g')
+			targetfilepath="$targetbase/$targetfilename"
+				if [[ "$aline" != "$targetfilepath" ]]; then
+					mv -v "$aline" "$targetfilepath"
+				fi
+		done < "$logdir/depth0_$i.rst"
+	done
+}
+
+# files
+
+function filemv() {
+	find "$basedir"/* -mindepth 0 -type f -not -path "$logdir" | sort -n > "$logdir/filedepth0.rst"
+
+	touch "$logdir/finaltargetbase.rst"
+	touch "$logdir/finalrootfilename01.rst"
+	touch "$logdir/finalrootfilename02.rst"
+	touch "$logdir/finalrootformat.rst"
+	touch "$logdir/finaltargetfilename01.rst"
+	touch "$logdir/finaltargetfilename02.rst"
+	touch "$logdir/finaltargetfilepath.rst"
+
+	while IFS= read -r aline; do
+		targetbase="$(printf '%s\n' "$aline" | sed 's/\/[^/]*$//')"
+		rootfilename01="$(printf '%s\n' "$aline" | sed 's/^[^:]*[/]//')"
+		rootfilename02="$(printf '%s\n' "$rootfilename01" | sed 's/\.[^\.]*$//')"
+		rootformat="$(printf '%s\n' "$rootfilename01" | sed 's/.*\././')"
+		targetfilename01="$(printf '%s\n' "$rootfilename02" | sed 's/!//g;s/@//g;s/#//g;s/\$//g;s/%//g;s/\^//g;s/&//g;s/*//g;s/(//g;s/)//g;s/-//g;s/,//g;s/\[//g;s/\]//g;s/{//g;s/}//g' | sed "s/'//g" | sed "s/ /_/g;s/\(.*\)/\L\1/g" | sed 's/\.//2g')"
+		targetfilename02="$targetfilename01$rootformat"
+		targetfilepath="$targetbase/$targetfilename02"
+		printf '%s\n' "$targetbase" >> "$logdir/finaltargetbase.rst"
+		printf '%s\n' "$rootfilename01" >> "$logdir/finalrootfilename01.rst"
+		printf '%s\n' "$rootfilename02" >> "$logdir/finalrootfilename02.rst"
+		printf '%s\n' "$rootformat" >> "$logdir/finalrootformat.rst"
+		printf '%s\n' "$targetfilename01" >> "$logdir/finaltargetfilename01.rst"
+		printf '%s\n' "$targetfilename02" >> "$logdir/finaltargetfilename02.rst"
+		printf '%s\n' "$targetfilepath" >> "$logdir/finaltargetfilepath.rst"
+		
+		if [[ "$aline" != "$targetfilepath" ]]; then
+			mv -v "$aline" "$targetfilepath"
+		fi
+	done < "$logdir/filedepth0.rst"
+}
+
+case "$compswitch" in
+	directories)
+		dirmv
+		;;
+
+	dirsfiles)
+		filemv
+		;;
+esac
